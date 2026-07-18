@@ -1,0 +1,27 @@
+kind = "web"
+previewPath = "/"
+title = "Gaza Future Academy"
+version = "1.0.0"
+id = "artifacts/gaza-future-academy"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 22912
+
+[services.development]
+run = "pnpm --filter @workspace/gaza-future-academy run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/gaza-future-academy", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/gaza-future-academy/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "22912"
+BASE_PATH = "/"

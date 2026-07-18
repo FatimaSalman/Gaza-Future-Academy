@@ -3,13 +3,23 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Gaza Future Academy API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: stories
+    description: Story library operations
+  - name: podcasts
+    description: Podcast library operations
+  - name: curriculum
+    description: Curriculum to story transformation
+  - name: tutor
+    description: AI coding tutor chat
+  - name: openai
+    description: OpenAI AI chat operations
 paths:
   /healthz:
     get:
@@ -24,6 +34,316 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /stories:
+    get:
+      operationId: listStories
+      tags: [stories]
+      summary: List all stories
+      parameters:
+        - name: category
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: ageGroup
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of stories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Story"
+    post:
+      operationId: createStory
+      tags: [stories]
+      summary: Create a new story
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StoryInput"
+      responses:
+        "201":
+          description: Created story
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Story"
+
+  /stories/{id}:
+    get:
+      operationId: getStory
+      tags: [stories]
+      summary: Get a story by id
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Story
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Story"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /stories/featured:
+    get:
+      operationId: listFeaturedStories
+      tags: [stories]
+      summary: List featured stories for the home screen
+      responses:
+        "200":
+          description: Featured stories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Story"
+
+  /podcasts:
+    get:
+      operationId: listPodcasts
+      tags: [podcasts]
+      summary: List all podcasts
+      parameters:
+        - name: category
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of podcasts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Podcast"
+    post:
+      operationId: createPodcast
+      tags: [podcasts]
+      summary: Create a new podcast
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PodcastInput"
+      responses:
+        "201":
+          description: Created podcast
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Podcast"
+
+  /podcasts/{id}:
+    get:
+      operationId: getPodcast
+      tags: [podcasts]
+      summary: Get a podcast by id
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Podcast
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Podcast"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /curriculum/transform:
+    post:
+      operationId: transformCurriculum
+      tags: [curriculum]
+      summary: Transform curriculum topic into an engaging story
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CurriculumInput"
+      responses:
+        "200":
+          description: SSE stream of generated story content
+          content:
+            text/event-stream: {}
+
+  /curriculum/history:
+    get:
+      operationId: listCurriculumHistory
+      tags: [curriculum]
+      summary: List previously transformed curriculum items
+      responses:
+        "200":
+          description: List of curriculum transformations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CurriculumTransformation"
+
+  /tutor/conversations:
+    get:
+      operationId: listTutorConversations
+      tags: [tutor]
+      summary: List all tutor conversations
+      responses:
+        "200":
+          description: List of conversations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TutorConversation"
+    post:
+      operationId: createTutorConversation
+      tags: [tutor]
+      summary: Create a new tutor conversation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TutorConversationInput"
+      responses:
+        "201":
+          description: Created conversation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TutorConversation"
+
+  /tutor/conversations/{id}:
+    get:
+      operationId: getTutorConversation
+      tags: [tutor]
+      summary: Get a tutor conversation with messages
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Conversation with messages
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TutorConversationWithMessages"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+    delete:
+      operationId: deleteTutorConversation
+      tags: [tutor]
+      summary: Delete a tutor conversation
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /tutor/conversations/{id}/messages:
+    get:
+      operationId: listTutorMessages
+      tags: [tutor]
+      summary: List messages in a tutor conversation
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of messages
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TutorMessage"
+    post:
+      operationId: sendTutorMessage
+      tags: [tutor]
+      summary: Send a message to the AI coding tutor and receive a streaming response
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TutorMessageInput"
+      responses:
+        "200":
+          description: SSE stream of AI tutor response
+          content:
+            text/event-stream: {}
+
+  /library/stats:
+    get:
+      operationId: getLibraryStats
+      tags: [stories]
+      summary: Get library statistics (story count, podcast count, etc.)
+      responses:
+        "200":
+          description: Library statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LibraryStats"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +354,212 @@ components:
       required:
         - status
 
+    ApiError:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+
+    Story:
+      type: object
+      required: [id, title, titleAr, content, contentAr, category, ageGroup, coverEmoji, readingTimeMinutes, createdAt]
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        titleAr:
+          type: string
+        content:
+          type: string
+        contentAr:
+          type: string
+        category:
+          type: string
+        ageGroup:
+          type: string
+        coverEmoji:
+          type: string
+        readingTimeMinutes:
+          type: integer
+        isFeatured:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+    StoryInput:
+      type: object
+      required: [title, titleAr, content, contentAr, category, ageGroup, coverEmoji, readingTimeMinutes]
+      properties:
+        title:
+          type: string
+        titleAr:
+          type: string
+        content:
+          type: string
+        contentAr:
+          type: string
+        category:
+          type: string
+        ageGroup:
+          type: string
+        coverEmoji:
+          type: string
+        readingTimeMinutes:
+          type: integer
+        isFeatured:
+          type: boolean
+
+    Podcast:
+      type: object
+      required: [id, title, titleAr, description, descriptionAr, category, durationMinutes, audioUrl, coverEmoji, createdAt]
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        titleAr:
+          type: string
+        description:
+          type: string
+        descriptionAr:
+          type: string
+        category:
+          type: string
+        durationMinutes:
+          type: integer
+        audioUrl:
+          type: string
+        coverEmoji:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    PodcastInput:
+      type: object
+      required: [title, titleAr, description, descriptionAr, category, durationMinutes, audioUrl, coverEmoji]
+      properties:
+        title:
+          type: string
+        titleAr:
+          type: string
+        description:
+          type: string
+        descriptionAr:
+          type: string
+        category:
+          type: string
+        durationMinutes:
+          type: integer
+        audioUrl:
+          type: string
+        coverEmoji:
+          type: string
+
+    CurriculumInput:
+      type: object
+      required: [subject, topic, gradeLevel]
+      properties:
+        subject:
+          type: string
+        topic:
+          type: string
+        gradeLevel:
+          type: string
+        language:
+          type: string
+
+    CurriculumTransformation:
+      type: object
+      required: [id, subject, topic, gradeLevel, storyTitle, storyContent, createdAt]
+      properties:
+        id:
+          type: integer
+        subject:
+          type: string
+        topic:
+          type: string
+        gradeLevel:
+          type: string
+        storyTitle:
+          type: string
+        storyContent:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    TutorConversation:
+      type: object
+      required: [id, title, createdAt]
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    TutorConversationInput:
+      type: object
+      required: [title]
+      properties:
+        title:
+          type: string
+
+    TutorConversationWithMessages:
+      type: object
+      required: [id, title, createdAt, messages]
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/TutorMessage"
+
+    TutorMessage:
+      type: object
+      required: [id, conversationId, role, content, createdAt]
+      properties:
+        id:
+          type: integer
+        conversationId:
+          type: integer
+        role:
+          type: string
+        content:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    TutorMessageInput:
+      type: object
+      required: [content]
+      properties:
+        content:
+          type: string
+
+    LibraryStats:
+      type: object
+      required: [totalStories, totalPodcasts, totalTransformations, featuredCount]
+      properties:
+        totalStories:
+          type: integer
+        totalPodcasts:
+          type: integer
+        totalTransformations:
+          type: integer
+        featuredCount:
+          type: integer
