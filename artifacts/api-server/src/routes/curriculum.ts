@@ -1,4 +1,5 @@
 import { Router, type IRouter } from "express";
+import { desc } from "drizzle-orm";
 import { db, curriculumTransformationsTable } from "@workspace/db";
 import {
   TransformCurriculumBody,
@@ -7,17 +8,16 @@ import {
 
 const router: IRouter = Router();
 
-function getOpenAIClient() {
+async function getOpenAIClient() {
   const apiKey =
-    process.env.AI_INTEGRATIONS_OPENAI_API_KEY ||
-    process.env.OPENAI_API_KEY;
+    process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
   const baseURL = process.env.AI_INTEGRATIONS_OPENAI_BASE_URL;
 
   if (!apiKey) {
     return null;
   }
 
-  const { default: OpenAI } = require("openai");
+  const { default: OpenAI } = await import("openai");
   return new OpenAI({ apiKey, ...(baseURL ? { baseURL } : {}) });
 }
 
@@ -31,9 +31,11 @@ router.post("/curriculum/transform", async (req, res): Promise<void> => {
   const { subject, topic, gradeLevel, language } = parsed.data;
   const isArabic = language === "ar";
 
-  const openai = getOpenAIClient();
+  const openai = await getOpenAIClient();
   if (!openai) {
-    res.status(503).json({ error: "AI service not configured. Please set OPENAI_API_KEY." });
+    res
+      .status(503)
+      .json({ error: "AI service not configured. Please set OPENAI_API_KEY." });
     return;
   }
 
@@ -61,6 +63,8 @@ Write a creative educational story that teaches students this concept in a fun w
 
   let fullContent = "";
   let storyTitle = "";
+  let titleResolved = false;
+  let titleBuffer = "";
 
   try {
     const stream = await openai.chat.completions.create({
@@ -73,46 +77,61 @@ Write a creative educational story that teaches students this concept in a fun w
       stream: true,
     });
 
-    let isFirstLine = true;
-    let titleBuffer = "";
-
     for await (const chunk of stream) {
       const content = chunk.choices[0]?.delta?.content;
-      if (content) {
-        fullContent += content;
+      if (!content) continue;
 
-        // Extract title from first line
-        if (isFirstLine) {
-          titleBuffer += content;
-          const newlineIdx = titleBuffer.indexOf("\n");
-          if (newlineIdx !== -1) {
-            storyTitle = titleBuffer.substring(0, newlineIdx).trim().replace(/^#+\s*/, "");
-            isFirstLine = false;
-          }
+      if (!titleResolved) {
+        // Buffer content until we see the title's line break — never leak
+        // the raw title text into the story body sent to the client.
+        titleBuffer += content;
+        const newlineIdx = titleBuffer.indexOf("\n");
+        if (newlineIdx === -1) {
+          continue;
         }
 
-        res.write(`data: ${JSON.stringify({ content })}\n\n`);
+        storyTitle = titleBuffer
+          .slice(0, newlineIdx)
+          .trim()
+          .replace(/^#+\s*/, "");
+        const rest = titleBuffer.slice(newlineIdx + 1);
+        titleResolved = true;
+
+        res.write(`data: ${JSON.stringify({ title: storyTitle })}\n\n`);
+
+        if (rest) {
+          fullContent += rest;
+          res.write(`data: ${JSON.stringify({ content: rest })}\n\n`);
+        }
+        continue;
       }
+
+      fullContent += content;
+      res.write(`data: ${JSON.stringify({ content })}\n\n`);
     }
 
-    if (!storyTitle) {
-      storyTitle = `${subject}: ${topic}`;
+    if (!titleResolved) {
+      // Model finished without ever emitting a newline; fall back gracefully.
+      storyTitle = titleBuffer.trim() || `${subject}: ${topic}`;
+      fullContent = "";
+      res.write(`data: ${JSON.stringify({ title: storyTitle })}\n\n`);
     }
 
-    // Save to DB
     await db.insert(curriculumTransformationsTable).values({
       subject,
       topic,
       gradeLevel,
       storyTitle,
-      storyContent: fullContent,
+      storyContent: fullContent.trim(),
     });
 
-    res.write(`data: ${JSON.stringify({ done: true, storyTitle })}\n\n`);
+    res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
     res.end();
   } catch (err) {
     req.log.error({ err }, "Curriculum transform error");
-    res.write(`data: ${JSON.stringify({ error: "Failed to generate story" })}\n\n`);
+    res.write(
+      `data: ${JSON.stringify({ error: "Failed to generate story" })}\n\n`,
+    );
     res.end();
   }
 });
@@ -121,7 +140,7 @@ router.get("/curriculum/history", async (_req, res): Promise<void> => {
   const history = await db
     .select()
     .from(curriculumTransformationsTable)
-    .orderBy(curriculumTransformationsTable.createdAt);
+    .orderBy(desc(curriculumTransformationsTable.createdAt));
 
   res.json(ListCurriculumHistoryResponse.parse(history));
 });

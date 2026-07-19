@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { db, storiesTable } from "@workspace/db";
 import {
   GetStoryParams,
@@ -22,8 +22,6 @@ router.get("/stories", async (req, res): Promise<void> => {
     return;
   }
 
-  let query = db.select().from(storiesTable).$dynamic();
-
   const conditions = [];
   if (params.data.category) {
     conditions.push(eq(storiesTable.category, params.data.category));
@@ -32,9 +30,9 @@ router.get("/stories", async (req, res): Promise<void> => {
     conditions.push(eq(storiesTable.ageGroup, params.data.ageGroup));
   }
 
-  const stories = await (conditions.length > 0
-    ? db.select().from(storiesTable).where(conditions.length === 1 ? conditions[0] : conditions[0])
-    : db.select().from(storiesTable));
+  const stories = conditions.length > 0
+    ? await db.select().from(storiesTable).where(and(...conditions))
+    : await db.select().from(storiesTable);
 
   res.json(ListStoriesResponse.parse(stories));
 });

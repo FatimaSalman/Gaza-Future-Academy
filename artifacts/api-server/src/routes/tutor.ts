@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import { db, tutorConversationsTable, tutorMessagesTable } from "@workspace/db";
 import {
   CreateTutorConversationBody,
@@ -31,7 +31,7 @@ const TUTOR_SYSTEM_PROMPT = `أنت "رفيق"، مدرس البرمجة الو�
 
 You can also respond in English if the child writes in English. Always be warm, patient, and encouraging.`;
 
-function getOpenAIClient() {
+async function getOpenAIClient() {
   const apiKey =
     process.env.AI_INTEGRATIONS_OPENAI_API_KEY ||
     process.env.OPENAI_API_KEY;
@@ -39,7 +39,7 @@ function getOpenAIClient() {
 
   if (!apiKey) return null;
 
-  const { default: OpenAI } = require("openai");
+  const { default: OpenAI } = await import("openai");
   return new OpenAI({ apiKey, ...(baseURL ? { baseURL } : {}) });
 }
 
@@ -47,7 +47,7 @@ router.get("/tutor/conversations", async (_req, res): Promise<void> => {
   const conversations = await db
     .select()
     .from(tutorConversationsTable)
-    .orderBy(tutorConversationsTable.createdAt);
+    .orderBy(desc(tutorConversationsTable.createdAt));
   res.json(ListTutorConversationsResponse.parse(conversations));
 });
 
@@ -168,7 +168,8 @@ router.post("/tutor/conversations/:id/messages", async (req, res): Promise<void>
     content,
   });
 
-  const openai = getOpenAIClient();
+  const openai = await getOpenAIClient();
+
   if (!openai) {
     // Return a friendly message when AI is not configured
     const fallbackMsg = "عذراً، خدمة الذكاء الاصطناعي غير متاحة حالياً. يرجى المحاولة لاحقاً. (AI service not available yet. Please try again later.)";
