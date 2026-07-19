@@ -4,6 +4,7 @@ import { useListCurriculumHistory } from '@workspace/api-client-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useToast } from '@/hooks/use-toast';
 import { Sparkles, Wand2, BookOpen, Clock, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -14,10 +15,11 @@ import {
 
 export function Curriculum() {
   const { t, isRtl } = useLanguage();
+  const { toast } = useToast();
   const [subject, setSubject] = useState('');
   const [topic, setTopic] = useState('');
   const [gradeLevel, setGradeLevel] = useState('');
-  
+
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedStory, setGeneratedStory] = useState('');
   const [generatedTitle, setGeneratedTitle] = useState('');
@@ -33,7 +35,6 @@ export function Curriculum() {
     setGeneratedStory('');
     setGeneratedTitle('');
 
-    // Smooth scroll to the result area
     setTimeout(() => {
       scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, 100);
@@ -50,29 +51,59 @@ export function Curriculum() {
         }),
       });
 
+      // IMPORTANT: check for HTTP errors before treating the body as a stream.
+      if (!response.ok) {
+        let message = t(
+          'حدث خطأ أثناء توليد القصة. حاول مرة أخرى.',
+          'Something went wrong while generating the story. Please try again.'
+        );
+        try {
+          const errorBody = await response.json();
+          if (errorBody?.error) message = errorBody.error;
+        } catch {
+          // Response wasn't JSON — keep the default message.
+        }
+        toast({
+          variant: 'destructive',
+          title: t('تعذّر توليد القصة', 'Failed to generate story'),
+          description: message,
+        });
+        return;
+      }
+
       if (!response.body) throw new Error('No response body');
 
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let buffer = '';
+      let sawAnyEvent = false;
 
       while (true) {
         const { value, done } = await reader.read();
         if (done) break;
-        
+
         buffer += decoder.decode(value, { stream: true });
-        
-        // Process SSE format: "data: {...}\n\n"
+
         const lines = buffer.split('\n');
-        buffer = lines.pop() || ''; // Keep the incomplete line in buffer
+        buffer = lines.pop() || '';
 
         for (const line of lines) {
           if (line.startsWith('data: ')) {
             const dataStr = line.slice(6);
             if (dataStr === '[DONE]') continue;
-            
+
             try {
               const data = JSON.parse(dataStr);
+              sawAnyEvent = true;
+
+              if (data.error) {
+                toast({
+                  variant: 'destructive',
+                  title: t('تعذّر توليد القصة', 'Failed to generate story'),
+                  description: data.error,
+                });
+                return;
+              }
               if (data.title) {
                 setGeneratedTitle(data.title);
               }
@@ -85,10 +116,29 @@ export function Curriculum() {
           }
         }
       }
-      
+
+      if (!sawAnyEvent) {
+        toast({
+          variant: 'destructive',
+          title: t('تعذّر توليد القصة', 'Failed to generate story'),
+          description: t(
+            'لم يتم استلام أي رد من الخادم. تأكد من إعداد خدمة الذكاء الاصطناعي.',
+            'No response was received from the server. Please make sure the AI service is configured.'
+          ),
+        });
+      }
+
       refetchHistory();
     } catch (error) {
       console.error('Failed to transform curriculum', error);
+      toast({
+        variant: 'destructive',
+        title: t('تعذّر توليد القصة', 'Failed to generate story'),
+        description: t(
+          'حدث خطأ بالاتصال بالخادم. تأكد من اتصالك بالإنترنت وحاول مرة أخرى.',
+          'A connection error occurred. Please check your connection and try again.'
+        ),
+      });
     } finally {
       setIsGenerating(false);
     }
@@ -112,7 +162,6 @@ export function Curriculum() {
       </div>
 
       <div className="bg-card rounded-[3rem] p-8 md:p-10 shadow-sm border-4 border-primary/20 relative overflow-hidden">
-        {/* Decorative elements */}
         <div className="absolute top-[-20px] right-[-20px] w-40 h-40 bg-secondary/20 rounded-full blur-2xl pointer-events-none" />
         <div className="absolute bottom-[-20px] left-[-20px] w-40 h-40 bg-accent/20 rounded-full blur-2xl pointer-events-none" />
 
@@ -122,7 +171,7 @@ export function Curriculum() {
               <Label className="text-lg font-bold flex items-center gap-2">
                 📚 {t('المادة الدراسية', 'Subject')}
               </Label>
-              <Input 
+              <Input
                 value={subject}
                 onChange={e => setSubject(e.target.value)}
                 placeholder={t('مثال: رياضيات، علوم...', 'e.g. Math, Science...')}
@@ -134,7 +183,7 @@ export function Curriculum() {
               <Label className="text-lg font-bold flex items-center gap-2">
                 🎯 {t('موضوع الدرس', 'Lesson Topic')}
               </Label>
-              <Input 
+              <Input
                 value={topic}
                 onChange={e => setTopic(e.target.value)}
                 placeholder={t('مثال: الكسور، الكواكب...', 'e.g. Fractions, Planets...')}
@@ -146,7 +195,7 @@ export function Curriculum() {
               <Label className="text-lg font-bold flex items-center gap-2">
                 👧 {t('العمر / الصف', 'Age / Grade')}
               </Label>
-              <Input 
+              <Input
                 value={gradeLevel}
                 onChange={e => setGradeLevel(e.target.value)}
                 placeholder={t('مثال: 8 سنوات، الصف الثالث', 'e.g. 8 years, 3rd grade')}
@@ -156,8 +205,8 @@ export function Curriculum() {
             </div>
           </div>
 
-          <Button 
-            type="submit" 
+          <Button
+            type="submit"
             disabled={!subject || !topic || !gradeLevel || isGenerating}
             size="lg"
             className="w-full h-16 text-xl font-black rounded-full mt-4 bg-primary text-white hover:bg-primary/90 hover:scale-[1.02] transition-transform shadow-lg disabled:opacity-50 disabled:hover:scale-100"
@@ -170,7 +219,7 @@ export function Curriculum() {
             ) : (
               <span className="flex items-center gap-2">
                 <Wand2 className="w-6 h-6" />
-                {t('حَوِّل درسي إلى قصة!', 'Transform my lesson!')}
+                {t('حَوِّل درسي إلى قصة!', 'Transform my lesson!')}
               </span>
             )}
           </Button>
@@ -185,7 +234,7 @@ export function Curriculum() {
                 {generatedTitle}
               </h2>
             )}
-            
+
             <div className={cn(
               "prose prose-lg md:prose-xl max-w-none font-medium leading-loose",
               isRtl ? "text-right" : "text-left"

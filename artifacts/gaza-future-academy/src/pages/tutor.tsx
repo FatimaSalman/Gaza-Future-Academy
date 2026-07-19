@@ -13,8 +13,10 @@ import { Input } from '@/components/ui/input';
 import { MessageCircleCode, Send, Plus, Bot, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useToast } from '@/hooks/use-toast';
 
 export function Tutor() {
+  const { toast } = useToast();
   const { t, isRtl } = useLanguage();
   const queryClient = useQueryClient();
   
@@ -87,6 +89,18 @@ export function Tutor() {
         body: JSON.stringify({ content: userMsg }),
       });
 
+      if (!response.ok) {
+        toast({
+          variant: 'destructive',
+          title: t('تعذّر إرسال الرسالة', 'Failed to send message'),
+          description: t(
+            'حدث خطأ، تأكد من إعداد خدمة الذكاء الاصطناعي.',
+            'Something went wrong. Please make sure the AI service is configured.'
+          ),
+        });
+        return;
+      }
+      
       if (!response.body) throw new Error('No response body');
 
       const reader = response.body.getReader();

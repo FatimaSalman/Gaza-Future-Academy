@@ -211,7 +211,7 @@ router.post("/tutor/conversations/:id/messages", async (req, res): Promise<void>
 
   try {
     const stream = await openai.chat.completions.create({
-      model: "gpt-5.6-luna",
+      model: "gpt-4o-mini",
       max_completion_tokens: 1024,
       messages: chatMessages,
       stream: true,

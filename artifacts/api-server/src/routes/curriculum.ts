@@ -68,7 +68,7 @@ Write a creative educational story that teaches students this concept in a fun w
 
   try {
     const stream = await openai.chat.completions.create({
-      model: "gpt-5.6-luna",
+      model: "gpt-4o-mini",
       max_completion_tokens: 2048,
       messages: [
         { role: "system", content: systemPrompt },
