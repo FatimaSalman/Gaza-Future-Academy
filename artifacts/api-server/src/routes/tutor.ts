@@ -35,9 +35,13 @@ async function getOpenAIClient() {
   const apiKey =
     process.env.AI_INTEGRATIONS_OPENAI_API_KEY ||
     process.env.OPENAI_API_KEY;
-  const baseURL = process.env.AI_INTEGRATIONS_OPENAI_BASE_URL;
+  const baseURL =
+    process.env.AI_INTEGRATIONS_OPENAI_BASE_URL ||
+    process.env.OPENAI_BASE_URL;
 
-  if (!apiKey) return null;
+  if (!apiKey) {
+    return null;
+  }
 
   const { default: OpenAI } = await import("openai");
   return new OpenAI({ apiKey, ...(baseURL ? { baseURL } : {}) });
@@ -211,8 +215,8 @@ router.post("/tutor/conversations/:id/messages", async (req, res): Promise<void>
 
   try {
     const stream = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      max_completion_tokens: 1024,
+      model: "llama-3.3-70b-versatile",
+      max_tokens: 1024,
       messages: chatMessages,
       stream: true,
     });
