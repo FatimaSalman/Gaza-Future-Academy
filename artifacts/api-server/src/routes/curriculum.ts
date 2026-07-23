@@ -1,14 +1,15 @@
-import { Router, type IRouter , type Request, type Response} from "express";
+import { Router, type IRouter, type Request, type Response } from "express";
 import { desc } from "drizzle-orm";
 import { db, curriculumTransformationsTable } from "@workspace/db";
 import {
   TransformCurriculumBody,
   ListCurriculumHistoryResponse,
 } from "@workspace/api-zod";
+import OpenAI from "openai";
 
 const router: IRouter = Router();
 
-async function getOpenAIClient() {
+function getOpenAIClient(): OpenAI | null {
   const apiKey =
     process.env.AI_INTEGRATIONS_OPENAI_API_KEY ||
     process.env.OPENAI_API_KEY;
@@ -20,11 +21,10 @@ async function getOpenAIClient() {
     return null;
   }
 
-  const { default: OpenAI } = await import("openai");
   return new OpenAI({ apiKey, ...(baseURL ? { baseURL } : {}) });
 }
 
-router.post("/curriculum/transform", async (req:Request, res:Response): Promise<void> => {
+router.post("/curriculum/transform", async (req: Request, res: Response): Promise<void> => {
   const parsed = TransformCurriculumBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -34,7 +34,7 @@ router.post("/curriculum/transform", async (req:Request, res:Response): Promise<
   const { subject, topic, gradeLevel, language } = parsed.data;
   const isArabic = language === "ar";
 
-  const openai = await getOpenAIClient();
+  const openai = getOpenAIClient();
   if (!openai) {
     res
       .status(503)
@@ -85,8 +85,6 @@ Write a creative educational story that teaches students this concept in a fun w
       if (!content) continue;
 
       if (!titleResolved) {
-        // Buffer content until we see the title's line break — never leak
-        // the raw title text into the story body sent to the client.
         titleBuffer += content;
         const newlineIdx = titleBuffer.indexOf("\n");
         if (newlineIdx === -1) {
@@ -114,7 +112,6 @@ Write a creative educational story that teaches students this concept in a fun w
     }
 
     if (!titleResolved) {
-      // Model finished without ever emitting a newline; fall back gracefully.
       storyTitle = titleBuffer.trim() || `${subject}: ${topic}`;
       fullContent = "";
       res.write(`data: ${JSON.stringify({ title: storyTitle })}\n\n`);
@@ -126,12 +123,12 @@ Write a creative educational story that teaches students this concept in a fun w
       gradeLevel,
       storyTitle,
       storyContent: fullContent.trim(),
-    });
+    } as any);
 
     res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
     res.end();
   } catch (err) {
-    req.log.error({ err }, "Curriculum transform error");
+    (req as any).log?.error({ err }, "Curriculum transform error");
     res.write(
       `data: ${JSON.stringify({ error: "Failed to generate story" })}\n\n`,
     );
@@ -139,7 +136,7 @@ Write a creative educational story that teaches students this concept in a fun w
   }
 });
 
-router.get("/curriculum/history", async (_req:Request, res:Response): Promise<void> => {
+router.get("/curriculum/history", async (_req: Request, res: Response): Promise<void> => {
   const history = await db
     .select()
     .from(curriculumTransformationsTable)
