@@ -15,6 +15,58 @@ import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 
+function renderInlineSegments(line: string) {
+  const segments = line.split(/(\*\*[^*]+\*\*|`[^`]+`)/g).filter(Boolean);
+  return segments.map((seg, i) => {
+    if (seg.startsWith('**') && seg.endsWith('**')) {
+      return <strong key={i}>{seg.slice(2, -2)}</strong>;
+    }
+    if (seg.startsWith('`') && seg.endsWith('`')) {
+      return (
+        <code key={i} dir="ltr" className="bg-black/10 px-1.5 py-0.5 rounded font-mono text-sm">
+          {seg.slice(1, -1)}
+        </code>
+      );
+    }
+    return <span key={i}>{seg}</span>;
+  });
+}
+
+function renderMessageContent(content: string) {
+  const parts = content.split(/(```[\s\S]*?```)/g).filter(Boolean);
+
+  return parts.map((part, idx) => {
+    const fenceMatch = part.match(/^```(\w+)?\n?([\s\S]*?)```$/);
+
+    if (fenceMatch) {
+      const lang = fenceMatch[1] || '';
+      const code = fenceMatch[2].replace(/\n$/, '');
+      return (
+        <pre
+          key={idx}
+          dir="ltr"
+          className="bg-black/10 rounded-xl p-4 overflow-x-auto text-sm my-2 text-left font-mono"
+        >
+          {lang && <div className="text-xs opacity-60 mb-2">{lang}</div>}
+          <code>{code}</code>
+        </pre>
+      );
+    }
+
+    const lines = part.split('\n');
+    return (
+      <span key={idx}>
+        {lines.map((line, i) => (
+          <span key={i}>
+            {renderInlineSegments(line)}
+            {i < lines.length - 1 && <br />}
+          </span>
+        ))}
+      </span>
+    );
+  });
+}
+
 export function Tutor() {
   const { toast } = useToast();
   const { t, isRtl } = useLanguage();
@@ -264,12 +316,7 @@ export function Tutor() {
                       : "bg-muted/50 text-foreground border-2 border-border/50 rounded-tl-sm",
                   )}
                 >
-                  {msg.content.split("\n").map((line, i) => (
-                    <span key={i}>
-                      {line}
-                      <br />
-                    </span>
-                  ))}
+                  {renderMessageContent(msg.content)}
                 </div>
               </div>
             ))}
@@ -287,12 +334,7 @@ export function Tutor() {
                 </div>
 
                 <div className="max-w-[80%] rounded-[2rem] p-5 font-medium text-[17px] leading-relaxed bg-muted/50 text-foreground border-2 border-border/50 rounded-tl-sm">
-                  {streamingMessage.split("\n").map((line, i) => (
-                    <span key={i}>
-                      {line}
-                      <br />
-                    </span>
-                  ))}
+                  {renderMessageContent(streamingMessage)}
                   <span className="inline-block w-2 h-5 bg-[#2e7d32] animate-pulse ml-1 align-middle" />
                 </div>
               </div>
