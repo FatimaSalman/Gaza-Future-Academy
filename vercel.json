@@ -2,16 +2,7 @@
   "framework": null,
   "buildCommand": "",
   "outputDirectory": "",
-  "installCommand": "npm install express cors openai @types/express @types/cors @types/node ts-node typescript",
-  "functions": {
-    "api/index.ts": {
-      "runtime": "nodejs20.x",
-      "includeFiles": "**/*.{json,ts,js}",
-      "excludeFiles": "node_modules/**"
-    }
-  },
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/index.ts" },
-    { "source": "/(.*)", "destination": "/api/index.ts" }
+    { "source": "/(.*)", "destination": "/api/index" }
   ]
 }
