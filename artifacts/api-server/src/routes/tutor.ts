@@ -1,4 +1,4 @@
-import { Router, type IRouter } from "express";
+import { Router, type IRouter , type Request, type Response} from "express";
 import { eq, desc } from "drizzle-orm";
 import { db, tutorConversationsTable, tutorMessagesTable } from "@workspace/db";
 import {
@@ -47,7 +47,7 @@ async function getOpenAIClient() {
   return new OpenAI({ apiKey, ...(baseURL ? { baseURL } : {}) });
 }
 
-router.get("/tutor/conversations", async (_req, res): Promise<void> => {
+router.get("/tutor/conversations", async (_req:Request, res:Response): Promise<void> => {
   const conversations = await db
     .select()
     .from(tutorConversationsTable)
@@ -55,7 +55,7 @@ router.get("/tutor/conversations", async (_req, res): Promise<void> => {
   res.json(ListTutorConversationsResponse.parse(conversations));
 });
 
-router.post("/tutor/conversations", async (req, res): Promise<void> => {
+router.post("/tutor/conversations", async (req:Request, res:Response): Promise<void> => {
   const parsed = CreateTutorConversationBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -70,7 +70,7 @@ router.post("/tutor/conversations", async (req, res): Promise<void> => {
   res.status(201).json(CreateTutorConversationResponse.parse(conversation));
 });
 
-router.get("/tutor/conversations/:id", async (req, res): Promise<void> => {
+router.get("/tutor/conversations/:id", async (req:Request, res:Response): Promise<void> => {
   const raw = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
   const params = GetTutorConversationParams.safeParse({ id: parseInt(raw, 10) });
   if (!params.success) {
@@ -99,7 +99,7 @@ router.get("/tutor/conversations/:id", async (req, res): Promise<void> => {
   );
 });
 
-router.delete("/tutor/conversations/:id", async (req, res): Promise<void> => {
+router.delete("/tutor/conversations/:id", async (req:Request, res:Response): Promise<void> => {
   const raw = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
   const params = DeleteTutorConversationParams.safeParse({ id: parseInt(raw, 10) });
   if (!params.success) {
@@ -120,7 +120,7 @@ router.delete("/tutor/conversations/:id", async (req, res): Promise<void> => {
   res.sendStatus(204);
 });
 
-router.get("/tutor/conversations/:id/messages", async (req, res): Promise<void> => {
+router.get("/tutor/conversations/:id/messages", async (req:Request, res:Response): Promise<void> => {
   const raw = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
   const params = ListTutorMessagesParams.safeParse({ id: parseInt(raw, 10) });
   if (!params.success) {
@@ -137,7 +137,7 @@ router.get("/tutor/conversations/:id/messages", async (req, res): Promise<void> 
   res.json(ListTutorMessagesResponse.parse(messages));
 });
 
-router.post("/tutor/conversations/:id/messages", async (req, res): Promise<void> => {
+router.post("/tutor/conversations/:id/messages", async (req:Request, res:Response): Promise<void> => {
   const rawId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
   const params = SendTutorMessageParams.safeParse({ id: parseInt(rawId, 10) });
   if (!params.success) {

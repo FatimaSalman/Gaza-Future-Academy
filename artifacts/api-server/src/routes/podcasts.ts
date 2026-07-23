@@ -1,4 +1,4 @@
-import { Router, type IRouter } from "express";
+import { Router, type IRouter, type Request, type Response } from "express";
 import { eq } from "drizzle-orm";
 import { db, podcastsTable } from "@workspace/db";
 import {
@@ -12,7 +12,7 @@ import {
 
 const router: IRouter = Router();
 
-router.get("/podcasts", async (req, res): Promise<void> => {
+router.get("/podcasts", async (req:Request, res:Response): Promise<void> => {
   const params = ListPodcastsQueryParams.safeParse(req.query);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
@@ -26,7 +26,7 @@ router.get("/podcasts", async (req, res): Promise<void> => {
   res.json(ListPodcastsResponse.parse(podcasts));
 });
 
-router.post("/podcasts", async (req, res): Promise<void> => {
+router.post("/podcasts", async (req:Request, res:Response): Promise<void> => {
   const parsed = CreatePodcastBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -37,7 +37,7 @@ router.post("/podcasts", async (req, res): Promise<void> => {
   res.status(201).json(CreatePodcastResponse.parse(podcast));
 });
 
-router.get("/podcasts/:id", async (req, res): Promise<void> => {
+router.get("/podcasts/:id", async (req:Request, res:Response): Promise<void> => {
   const raw = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
   const params = GetPodcastParams.safeParse({ id: parseInt(raw, 10) });
   if (!params.success) {

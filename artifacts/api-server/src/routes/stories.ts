@@ -1,4 +1,4 @@
-import { Router, type IRouter } from "express";
+import { Router, type IRouter, type Request, type Response } from "express";
 import { eq, and } from "drizzle-orm";
 import { db, storiesTable } from "@workspace/db";
 import {
@@ -15,7 +15,7 @@ import { podcastsTable, curriculumTransformationsTable } from "@workspace/db";
 
 const router: IRouter = Router();
 
-router.get("/stories", async (req, res): Promise<void> => {
+router.get("/stories", async (req:Request, res:Response): Promise<void> => {
   const params = ListStoriesQueryParams.safeParse(req.query);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
@@ -37,7 +37,7 @@ router.get("/stories", async (req, res): Promise<void> => {
   res.json(ListStoriesResponse.parse(stories));
 });
 
-router.post("/stories", async (req, res): Promise<void> => {
+router.post("/stories", async (req:Request, res:Response): Promise<void> => {
   const parsed = CreateStoryBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -48,7 +48,7 @@ router.post("/stories", async (req, res): Promise<void> => {
   res.status(201).json(CreateStoryResponse.parse(story));
 });
 
-router.get("/stories/featured", async (_req, res): Promise<void> => {
+router.get("/stories/featured", async (_req:Request, res:Response): Promise<void> => {
   const stories = await db
     .select()
     .from(storiesTable)
@@ -57,7 +57,7 @@ router.get("/stories/featured", async (_req, res): Promise<void> => {
   res.json(ListFeaturedStoriesResponse.parse(stories));
 });
 
-router.get("/stories/:id", async (req, res): Promise<void> => {
+router.get("/stories/:id", async (req:Request, res:Response): Promise<void> => {
   const raw = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
   const params = GetStoryParams.safeParse({ id: parseInt(raw, 10) });
   if (!params.success) {
@@ -74,7 +74,7 @@ router.get("/stories/:id", async (req, res): Promise<void> => {
   res.json(GetStoryResponse.parse(story));
 });
 
-router.get("/library/stats", async (_req, res): Promise<void> => {
+router.get("/library/stats", async (_req:Request, res:Response): Promise<void> => {
   const [storiesResult, podcastsResult, transformationsResult, featuredResult] = await Promise.all([
     db.select().from(storiesTable),
     db.select().from(podcastsTable),

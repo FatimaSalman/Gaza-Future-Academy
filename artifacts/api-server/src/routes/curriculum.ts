@@ -1,4 +1,4 @@
-import { Router, type IRouter } from "express";
+import { Router, type IRouter , type Request, type Response} from "express";
 import { desc } from "drizzle-orm";
 import { db, curriculumTransformationsTable } from "@workspace/db";
 import {
@@ -24,7 +24,7 @@ async function getOpenAIClient() {
   return new OpenAI({ apiKey, ...(baseURL ? { baseURL } : {}) });
 }
 
-router.post("/curriculum/transform", async (req, res): Promise<void> => {
+router.post("/curriculum/transform", async (req:Request, res:Response): Promise<void> => {
   const parsed = TransformCurriculumBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -139,7 +139,7 @@ Write a creative educational story that teaches students this concept in a fun w
   }
 });
 
-router.get("/curriculum/history", async (_req, res): Promise<void> => {
+router.get("/curriculum/history", async (_req:Request, res:Response): Promise<void> => {
   const history = await db
     .select()
     .from(curriculumTransformationsTable)
