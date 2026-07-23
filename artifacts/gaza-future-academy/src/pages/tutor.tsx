@@ -161,7 +161,7 @@ export function Tutor() {
   };
 
   return (
-    <div className="flex h-[calc(100dvh-11rem)] md:h-[calc(100vh-9rem)] mt-2 gap-6 bg-card rounded-[3rem] border-4 border-border/50 overflow-hidden shadow-lg p-2">
+    <div className="flex flex-col gap-8">
       {/* Sidebar - Conversations List */}
       <div className="w-80 bg-muted/30 rounded-[2.5rem] p-4 hidden md:flex flex-col gap-4 border-2 border-border/50">
         <Button
