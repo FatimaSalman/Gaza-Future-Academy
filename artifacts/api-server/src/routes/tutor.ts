@@ -64,7 +64,7 @@ router.post("/tutor/conversations", async (req:Request, res:Response): Promise<v
 
   const [conversation] = await db
     .insert(tutorConversationsTable)
-    .values(parsed.data)
+    .values(parsed.data as any)
     .returning();
 
   res.status(201).json(CreateTutorConversationResponse.parse(conversation));

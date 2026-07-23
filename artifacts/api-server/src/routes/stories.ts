@@ -44,7 +44,7 @@ router.post("/stories", async (req:Request, res:Response): Promise<void> => {
     return;
   }
 
-  const [story] = await db.insert(storiesTable).values(parsed.data).returning();
+  const [story] = await db.insert(storiesTable).values(parsed.data as any).returning();
   res.status(201).json(CreateStoryResponse.parse(story));
 });
 

@@ -33,7 +33,7 @@ router.post("/podcasts", async (req:Request, res:Response): Promise<void> => {
     return;
   }
 
-  const [podcast] = await db.insert(podcastsTable).values(parsed.data).returning();
+  const [podcast] = await db.insert(podcastsTable).values(parsed.data as any).returning();
   res.status(201).json(CreatePodcastResponse.parse(podcast));
 });
 
