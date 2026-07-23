@@ -161,7 +161,7 @@ export function Tutor() {
   };
 
   return (
-    <div className="flex h-[calc(100vh-8rem)] gap-6 bg-card rounded-[3rem] border-4 border-border/50 overflow-hidden shadow-lg p-2">
+    <div className="flex h-[calc(100dvh-11rem)] md:h-[calc(100vh-9rem)] mt-2 gap-6 bg-card rounded-[3rem] border-4 border-border/50 overflow-hidden shadow-lg p-2">
       {/* Sidebar - Conversations List */}
       <div className="w-80 bg-muted/30 rounded-[2.5rem] p-4 hidden md:flex flex-col gap-4 border-2 border-border/50">
         <Button
@@ -193,7 +193,7 @@ export function Tutor() {
       </div>
 
       {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col bg-white rounded-[2.5rem] overflow-hidden border-2 border-border/50 relative marginTop ='58px'">
+      <div className="flex-1 flex flex-col bg-white rounded-[2.5rem] overflow-hidden border-2 border-border/50 relative">
         {/* Chat Header */}
         <div className="h-20 border-b-2 border-border/50 flex items-center px-8 bg-white z-10">
           <div className="flex items-center gap-4">
