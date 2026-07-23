@@ -9,7 +9,7 @@ import OpenAI from "openai";
 
 const router: IRouter = Router();
 
-function getOpenAIClient(): OpenAI | null {
+function getOpenAIClient(): any {
   const apiKey =
     process.env.AI_INTEGRATIONS_OPENAI_API_KEY ||
     process.env.OPENAI_API_KEY;
@@ -21,7 +21,8 @@ function getOpenAIClient(): OpenAI | null {
     return null;
   }
 
-  return new OpenAI({ apiKey, ...(baseURL ? { baseURL } : {}) });
+  const OpenAIClass = OpenAI as any;
+  return new OpenAIClass({ apiKey, ...(baseURL ? { baseURL } : {}) });
 }
 
 router.post("/curriculum/transform", async (req: Request, res: Response): Promise<void> => {
