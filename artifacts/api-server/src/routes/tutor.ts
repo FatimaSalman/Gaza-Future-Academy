@@ -1,4 +1,4 @@
-import { Router, type IRouter , type Request, type Response} from "express";
+import { Router, type IRouter, type Request, type Response } from "express";
 import { eq, desc } from "drizzle-orm";
 import { db, tutorConversationsTable, tutorMessagesTable } from "@workspace/db";
 import {
@@ -13,6 +13,7 @@ import {
   SendTutorMessageParams,
   SendTutorMessageBody,
 } from "@workspace/api-zod";
+import OpenAI from "openai";
 
 const router: IRouter = Router();
 
@@ -31,7 +32,7 @@ const TUTOR_SYSTEM_PROMPT = `أنت "رفيق"، مدرس البرمجة الو�
 
 You can also respond in English if the child writes in English. Always be warm, patient, and encouraging.`;
 
-async function getOpenAIClient() {
+function getOpenAIClient(): any {
   const apiKey =
     process.env.AI_INTEGRATIONS_OPENAI_API_KEY ||
     process.env.OPENAI_API_KEY;
@@ -43,11 +44,11 @@ async function getOpenAIClient() {
     return null;
   }
 
-  const { default: OpenAI } = await import("openai");
-  return new OpenAI({ apiKey, ...(baseURL ? { baseURL } : {}) });
+  const OpenAIClass = OpenAI as any;
+  return new OpenAIClass({ apiKey, ...(baseURL ? { baseURL } : {}) });
 }
 
-router.get("/tutor/conversations", async (_req:Request, res:Response): Promise<void> => {
+router.get("/tutor/conversations", async (_req: Request, res: Response): Promise<void> => {
   const conversations = await db
     .select()
     .from(tutorConversationsTable)
@@ -55,7 +56,7 @@ router.get("/tutor/conversations", async (_req:Request, res:Response): Promise<v
   res.json(ListTutorConversationsResponse.parse(conversations));
 });
 
-router.post("/tutor/conversations", async (req:Request, res:Response): Promise<void> => {
+router.post("/tutor/conversations", async (req: Request, res: Response): Promise<void> => {
   const parsed = CreateTutorConversationBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -70,7 +71,7 @@ router.post("/tutor/conversations", async (req:Request, res:Response): Promise<v
   res.status(201).json(CreateTutorConversationResponse.parse(conversation));
 });
 
-router.get("/tutor/conversations/:id", async (req:Request, res:Response): Promise<void> => {
+router.get("/tutor/conversations/:id", async (req: Request, res: Response): Promise<void> => {
   const raw = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
   const params = GetTutorConversationParams.safeParse({ id: parseInt(raw, 10) });
   if (!params.success) {
@@ -99,7 +100,7 @@ router.get("/tutor/conversations/:id", async (req:Request, res:Response): Promis
   );
 });
 
-router.delete("/tutor/conversations/:id", async (req:Request, res:Response): Promise<void> => {
+router.delete("/tutor/conversations/:id", async (req: Request, res: Response): Promise<void> => {
   const raw = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
   const params = DeleteTutorConversationParams.safeParse({ id: parseInt(raw, 10) });
   if (!params.success) {
@@ -120,7 +121,7 @@ router.delete("/tutor/conversations/:id", async (req:Request, res:Response): Pro
   res.sendStatus(204);
 });
 
-router.get("/tutor/conversations/:id/messages", async (req:Request, res:Response): Promise<void> => {
+router.get("/tutor/conversations/:id/messages", async (req: Request, res: Response): Promise<void> => {
   const raw = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
   const params = ListTutorMessagesParams.safeParse({ id: parseInt(raw, 10) });
   if (!params.success) {
@@ -137,7 +138,7 @@ router.get("/tutor/conversations/:id/messages", async (req:Request, res:Response
   res.json(ListTutorMessagesResponse.parse(messages));
 });
 
-router.post("/tutor/conversations/:id/messages", async (req:Request, res:Response): Promise<void> => {
+router.post("/tutor/conversations/:id/messages", async (req: Request, res: Response): Promise<void> => {
   const rawId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
   const params = SendTutorMessageParams.safeParse({ id: parseInt(rawId, 10) });
   if (!params.success) {
@@ -170,9 +171,9 @@ router.post("/tutor/conversations/:id/messages", async (req:Request, res:Respons
     conversationId: id,
     role: "user",
     content,
-  });
+  } as any);
 
-  const openai = await getOpenAIClient();
+  const openai = getOpenAIClient();
 
   if (!openai) {
     // Return a friendly message when AI is not configured
@@ -181,7 +182,7 @@ router.post("/tutor/conversations/:id/messages", async (req:Request, res:Respons
       conversationId: id,
       role: "assistant",
       content: fallbackMsg,
-    });
+    } as any);
 
     res.setHeader("Content-Type", "text/event-stream");
     res.setHeader("Cache-Control", "no-cache");
@@ -233,12 +234,12 @@ router.post("/tutor/conversations/:id/messages", async (req:Request, res:Respons
       conversationId: id,
       role: "assistant",
       content: fullResponse,
-    });
+    } as any);
 
     res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
     res.end();
   } catch (err) {
-    req.log.error({ err }, "Tutor message error");
+    (req as any).log?.error({ err }, "Tutor message error");
     const errorMsg = "عذراً، حدث خطأ. يرجى المحاولة مرة أخرى. (Sorry, an error occurred. Please try again.)";
     res.write(`data: ${JSON.stringify({ content: errorMsg })}\n\n`);
     res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
