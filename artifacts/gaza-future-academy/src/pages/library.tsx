@@ -275,11 +275,11 @@ export function Library() {
 
         <TabsContent value="stories" className="mt-0 outline-none">
           {loadingStories ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6" style={{ direction: isRtl ? 'rtl' : 'ltr' }}>
               {[1, 2, 3, 4].map(i => <div key={i} className="h-72 bg-card rounded-[2.5rem] border-2 border-border/50 animate-pulse" />)}
             </div>
           ) : filteredStories && filteredStories.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6" style={{ direction: isRtl ? 'rtl' : 'ltr' }}>
               {filteredStories.map(story => (
                 <Link key={story.id} href={`/library/stories/${story.id}`}>
                   <div className="group bg-white hover:bg-primary/5 rounded-[2.5rem] p-5 border-2 border-border hover:border-primary/30 transition-all cursor-pointer h-full flex flex-col gap-4 shadow-sm hover:shadow-md">
@@ -333,11 +333,11 @@ export function Library() {
 
         <TabsContent value="podcasts" className="mt-0 outline-none">
           {loadingPodcasts ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6" style={{ direction: isRtl ? 'rtl' : 'ltr' }}>
               {[1, 2].map(i => <div key={i} className="h-48 bg-card rounded-[2.5rem] border-2 border-border/50 animate-pulse" />)}
             </div>
           ) : filteredPodcasts && filteredPodcasts.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6" style={{ direction: isRtl ? 'rtl' : 'ltr' }}>
               {filteredPodcasts.map(podcast => (
                 <div key={podcast.id} className="group bg-white hover:bg-secondary/5 rounded-[2.5rem] p-5 border-2 border-border hover:border-secondary/30 transition-all flex items-center gap-6 shadow-sm hover:shadow-md">
                   <div className="w-32 h-32 shrink-0 rounded-3xl bg-gradient-to-br from-yellow-100 to-orange-100 flex items-center justify-center text-5xl shadow-inner relative overflow-hidden">
