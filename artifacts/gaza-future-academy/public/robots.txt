@@ -1,2 +1,3 @@
 User-agent: *
 Allow: /
+Sitemap: https://gaza-future-academy--fatoom2119911.replit.app/sitemap.xml
