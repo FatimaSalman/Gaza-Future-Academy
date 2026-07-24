@@ -27,6 +27,8 @@ const CATEGORY_TRANSLATIONS: Record<string, { ar: string; en: string; emoji: str
   music:       { ar: 'موسيقى',    en: 'Music',       emoji: '🎵' },
   health:      { ar: 'صحة',       en: 'Health',      emoji: '❤️' },
   environment: { ar: 'بيئة',      en: 'Environment', emoji: '🌍' },
+  language:    { ar: 'لغات',      en: 'Language',    emoji: '🗣️' },
+  art:         { ar: 'فنون',      en: 'Art',         emoji: '🎨' },
 };
 
 // دالة ترجمة التصنيف
@@ -159,7 +161,7 @@ export function Library() {
         <div className={cn(
           "bg-card rounded-3xl border-2 border-border/50 p-6 space-y-6 transition-all",
           "animate-in slide-in-from-top-2 duration-200"
-        )}>
+        )} style={{ direction: isRtl ? 'rtl' : 'ltr' }}>
           {/* تصنيفات القصص */}
           <div className="space-y-3">
             <h3 className={cn("text-lg font-black text-foreground flex items-center gap-2", isRtl && "text-right")}>
@@ -246,7 +248,7 @@ export function Library() {
       )}
 
       <Tabs defaultValue="stories" className="w-full">
-        <TabsList className="bg-card border-2 border-border/50 h-16 p-2 rounded-full mb-8 inline-flex">
+        <TabsList className="bg-card border-2 border-border/50 h-16 p-2 rounded-full mb-8 inline-flex" style={{ direction: isRtl ? 'rtl' : 'ltr' }}>
           <TabsTrigger 
             value="stories" 
             className="rounded-full px-8 font-black text-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all"

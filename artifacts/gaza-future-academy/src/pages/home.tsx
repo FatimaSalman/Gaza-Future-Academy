@@ -3,6 +3,7 @@ import { useLanguage } from '@/components/language-provider';
 import { ArrowRight, BookOpen, Sparkles, MessageCircleCode, Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useListFeaturedStories, useGetLibraryStats } from '@workspace/api-client-react';
+import { cn } from '@/lib/utils';
 
 // ═══════════════════════════════════════════════════════════════
 // خريطة ترجمة التصنيفات من الإنجليزية إلى العربية
