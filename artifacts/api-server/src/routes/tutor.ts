@@ -17,17 +17,31 @@ import OpenAI from "openai";
 
 const router: IRouter = Router();
 
+// ═══════════════════════════════════════════════════
+// ║  فلتر حروف CJK — خط الدفاع الأخير              ║
+// ═══════════════════════════════════════════════════
+
+function filterCJK(text: string): string {
+  // يمسح حروف صيني، ياباني، كوري
+  const cjkRegex = /[\u2E80-\u2EFF\u2F00-\u2FDF\u3040-\u309F\u30A0-\u30FF\u3400-\u4DBF\u4E00-\u9FFF\uA960-\uA97F\uAC00-\uD7AF\uD7B0-\uD7FF\uF900-\uFAFF\uFE30-\uFE4F\uFF00-\uFFEF]/g;
+  let filtered = text.replace(cjkRegex, ' ');
+  filtered = filtered.replace(/ {2,}/g, ' ');
+  return filtered;
+}
+
 const TUTOR_SYSTEM_PROMPT = `أنت "رفيق"، مدرس البرمجة الودود والمشجع للأطفال المبتدئين. تساعد الأطفال على تعلم أساسيات البرمجة بطريقة ممتعة وبسيطة.
 
-## قواعد صارمة - يجب الالتزام بها:
-- اكتب بالعربية الفصحى المبسطة فقط - لا تستخدم أي لغة أخرى أبداً
-- لا تستخدم أي حروف صينية أو إندونيسية أو ماليزية أو يابانية أو كورية
-- لا تخلط اللغات - كل كلمة يجب أن تكون عربية
-- إذا كتب الطفل بالإنجليزية فقط، أجب بالإنجليزية فقط
-- جميع المصطلحات التقنية تُكتب بالعربية مع ذكر المصطلح الإنجليزي بين قوسين إذا لزم الأمر
+## قواعد مطلقة:
+1. اكتب بالعربية الفصحى المبسطة فقط
+2. كل حرف يجب أن يكون عربياً أو علامة ترقيم عربية (، ؟ ! . -) أو أرقام (0-9)
+3. ممنوع تماماً أي حرف صيني أو ياباني أو كوري
+4. ممنوع الكلمات الإندونيسية والماليزية
+5. كود البرمجة فقط يكون بالإنجليزية (مثل print, if, for)
+6. إذا كتب الطفل بالإنجليزية فقط، أجب بالإنجليزية فقط
+7. المصطلحات التقنية اكتبها بالعربية مع ذكر الإنجليزي بين قوسين
 
 أسلوبك:
-- استخدم لغة بسيطة ومشجعة مناسبة للأطفال
+- لغة بسيطة ومشجعة مناسبة للأطفال
 - اشرح المفاهيم بأمثلة من الحياة اليومية
 - كن صبوراً ومحفزاً دائماً
 - استخدم التشبيهات الممتعة لشرح مفاهيم البرمجة
@@ -228,8 +242,10 @@ router.post("/tutor/conversations/:id/messages", async (req: Request, res: Respo
     });
 
     for await (const chunk of stream) {
-      const delta = chunk.choices[0]?.delta?.content;
-      if (delta) {
+      const rawDelta = chunk.choices[0]?.delta?.content;
+      if (rawDelta) {
+        // ═══ فلتر: يمسح أي حروف CJK ═══
+        const delta = filterCJK(rawDelta);
         fullResponse += delta;
         res.write(`data: ${JSON.stringify({ content: delta })}\n\n`);
       }
@@ -252,4 +268,4 @@ router.post("/tutor/conversations/:id/messages", async (req: Request, res: Respo
   }
 });
 
-export default router; 
+export default router;
