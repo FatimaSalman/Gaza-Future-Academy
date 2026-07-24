@@ -1,41 +1,13 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { eq, desc } from "drizzle-orm";
-import { db, tutorConversationsTable, tutorMessagesTable } from "@workspace/db";
+import { desc } from "drizzle-orm";
+import { db, curriculumTransformationsTable } from "@workspace/db";
 import {
-  CreateTutorConversationBody,
-  CreateTutorConversationResponse,
-  GetTutorConversationParams,
-  GetTutorConversationResponse,
-  DeleteTutorConversationParams,
-  ListTutorConversationsResponse,
-  ListTutorMessagesParams,
-  ListTutorMessagesResponse,
-  SendTutorMessageParams,
-  SendTutorMessageBody,
+  TransformCurriculumBody,
+  ListCurriculumHistoryResponse,
 } from "@workspace/api-zod";
 import OpenAI from "openai";
 
 const router: IRouter = Router();
-
-const TUTOR_SYSTEM_PROMPT = `أنت "رفيق"، مدرس البرمجة الودود والمشجع للأطفال المبتدئين. تساعد الأطفال على تعلم أساسيات البرمجة بطريقة ممتعة وبسيطة.
-
-## قواعد صارمة - يجب الالتزام بها:
-- اكتب بالعربية الفصحى المبسطة فقط - لا تستخدم أي لغة أخرى أبداً
-- لا تستخدم أي حروف صينية أو إندونيسية أو ماليزية أو يابانية أو كورية
-- لا تخلط اللغات - كل كلمة يجب أن تكون عربية
-- إذا كتب الطفل بالإنجليزية فقط، أجب بالإنجليزية فقط
-- جميع المصطلحات التقنية تُكتب بالعربية مع ذكر المصطلح الإنجليزي بين قوسين إذا لزم الأمر
-
-أسلوبك:
-- استخدم لغة بسيطة ومشجعة مناسبة للأطفال
-- اشرح المفاهيم بأمثلة من الحياة اليومية
-- كن صبوراً ومحفزاً دائماً
-- استخدم التشبيهات الممتعة لشرح مفاهيم البرمجة
-- عندما تعطي كوداً، اشرحه سطراً سطراً
-- احتفل بتقدم الطفل وشجعه
-
-تعلّم: المتغيرات، الحلقات، الشروط (if/else)، الدوال، وأساسيات البرمجة
-اللغات: Python أو Scratch حسب ما يريد الطفل`;
 
 function getOpenAIClient(): any {
   const apiKey =
@@ -53,203 +25,125 @@ function getOpenAIClient(): any {
   return new OpenAIClass({ apiKey, ...(baseURL ? { baseURL } : {}) });
 }
 
-router.get("/tutor/conversations", async (_req: Request, res: Response): Promise<void> => {
-  const conversations = await db
-    .select()
-    .from(tutorConversationsTable)
-    .orderBy(desc(tutorConversationsTable.createdAt));
-  res.json(ListTutorConversationsResponse.parse(conversations));
-});
-
-router.post("/tutor/conversations", async (req: Request, res: Response): Promise<void> => {
-  const parsed = CreateTutorConversationBody.safeParse(req.body);
+router.post("/curriculum/transform", async (req: Request, res: Response): Promise<void> => {
+  const parsed = TransformCurriculumBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
     return;
   }
 
-  const [conversation] = await db
-    .insert(tutorConversationsTable)
-    .values(parsed.data as any)
-    .returning();
-
-  res.status(201).json(CreateTutorConversationResponse.parse(conversation));
-});
-
-router.get("/tutor/conversations/:id", async (req: Request, res: Response): Promise<void> => {
-  const raw = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-  const params = GetTutorConversationParams.safeParse({ id: parseInt(raw, 10) });
-  if (!params.success) {
-    res.status(400).json({ error: params.error.message });
-    return;
-  }
-
-  const [conversation] = await db
-    .select()
-    .from(tutorConversationsTable)
-    .where(eq(tutorConversationsTable.id, params.data.id));
-
-  if (!conversation) {
-    res.status(404).json({ error: "Conversation not found" });
-    return;
-  }
-
-  const messages = await db
-    .select()
-    .from(tutorMessagesTable)
-    .where(eq(tutorMessagesTable.conversationId, params.data.id))
-    .orderBy(tutorMessagesTable.createdAt);
-
-  res.json(
-    GetTutorConversationResponse.parse({ ...conversation, messages })
-  );
-});
-
-router.delete("/tutor/conversations/:id", async (req: Request, res: Response): Promise<void> => {
-  const raw = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-  const params = DeleteTutorConversationParams.safeParse({ id: parseInt(raw, 10) });
-  if (!params.success) {
-    res.status(400).json({ error: params.error.message });
-    return;
-  }
-
-  const [deleted] = await db
-    .delete(tutorConversationsTable)
-    .where(eq(tutorConversationsTable.id, params.data.id))
-    .returning();
-
-  if (!deleted) {
-    res.status(404).json({ error: "Conversation not found" });
-    return;
-  }
-
-  res.sendStatus(204);
-});
-
-router.get("/tutor/conversations/:id/messages", async (req: Request, res: Response): Promise<void> => {
-  const raw = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-  const params = ListTutorMessagesParams.safeParse({ id: parseInt(raw, 10) });
-  if (!params.success) {
-    res.status(400).json({ error: params.error.message });
-    return;
-  }
-
-  const messages = await db
-    .select()
-    .from(tutorMessagesTable)
-    .where(eq(tutorMessagesTable.conversationId, params.data.id))
-    .orderBy(tutorMessagesTable.createdAt);
-
-  res.json(ListTutorMessagesResponse.parse(messages));
-});
-
-router.post("/tutor/conversations/:id/messages", async (req: Request, res: Response): Promise<void> => {
-  const rawId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-  const params = SendTutorMessageParams.safeParse({ id: parseInt(rawId, 10) });
-  if (!params.success) {
-    res.status(400).json({ error: params.error.message });
-    return;
-  }
-
-  const bodyParsed = SendTutorMessageBody.safeParse(req.body);
-  if (!bodyParsed.success) {
-    res.status(400).json({ error: bodyParsed.error.message });
-    return;
-  }
-
-  const { id } = params.data;
-  const { content } = bodyParsed.data;
-
-  // Verify conversation exists
-  const [conversation] = await db
-    .select()
-    .from(tutorConversationsTable)
-    .where(eq(tutorConversationsTable.id, id));
-
-  if (!conversation) {
-    res.status(404).json({ error: "Conversation not found" });
-    return;
-  }
-
-  // Save user message
-  await db.insert(tutorMessagesTable).values({
-    conversationId: id,
-    role: "user",
-    content,
-  } as any);
+  const { subject, topic, gradeLevel, language } = parsed.data;
+  const isArabic = language === "ar";
 
   const openai = getOpenAIClient();
-
   if (!openai) {
-    // Return a friendly message when AI is not configured
-    const fallbackMsg = "عذراً، خدمة الذكاء الاصطناعي غير متاحة حالياً. يرجى المحاولة لاحقاً.";
-    await db.insert(tutorMessagesTable).values({
-      conversationId: id,
-      role: "assistant",
-      content: fallbackMsg,
-    } as any);
-
-    res.setHeader("Content-Type", "text/event-stream");
-    res.setHeader("Cache-Control", "no-cache");
-    res.setHeader("Connection", "keep-alive");
-    res.write(`data: ${JSON.stringify({ content: fallbackMsg })}\n\n`);
-    res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
-    res.end();
+    res
+      .status(503)
+      .json({ error: "AI service not configured. Please set OPENAI_API_KEY." });
     return;
   }
-
-  // Fetch conversation history
-  const history = await db
-    .select()
-    .from(tutorMessagesTable)
-    .where(eq(tutorMessagesTable.conversationId, id))
-    .orderBy(tutorMessagesTable.createdAt);
-
-  const chatMessages = [
-    { role: "system" as const, content: TUTOR_SYSTEM_PROMPT },
-    ...history.map((m) => ({
-      role: m.role as "user" | "assistant",
-      content: m.content,
-    })),
-  ];
 
   res.setHeader("Content-Type", "text/event-stream");
   res.setHeader("Cache-Control", "no-cache");
   res.setHeader("Connection", "keep-alive");
 
-  let fullResponse = "";
+  const systemPrompt = isArabic
+    ? `أنت معلم قصصي إبداعي للأطفال. مهمتك تحويل مفاهيم المناهج الدراسية إلى قصص شيقة وتعليمية للأطفال. اكتب قصة بالعربية تشرح المفهوم التعليمي بطريقة ممتعة ومبسطة، مع الحفاظ على المحتوى التعليمي. القصة يجب أن تكون مناسبة للعمر ومشوقة.`
+    : `You are a creative storytelling teacher for children. Your mission is to transform curriculum concepts into engaging educational stories for kids. Write a story in English that explains the educational concept in a fun and simple way, while preserving the educational content. The story should be age-appropriate and captivating.`;
+
+  const userPrompt = isArabic
+    ? `حول هذا الموضوع إلى قصة تعليمية شيقة:
+المادة: ${subject}
+الموضوع: ${topic}
+المرحلة الدراسية: ${gradeLevel}
+
+اكتب قصة إبداعية تعليمية تعلّم الطلاب هذا المفهوم بطريقة ممتعة. ابدأ بعنوان جذاب للقصة على سطر منفصل، ثم اكتب القصة.`
+    : `Transform this topic into an engaging educational story:
+Subject: ${subject}
+Topic: ${topic}
+Grade Level: ${gradeLevel}
+
+Write a creative educational story that teaches students this concept in a fun way. Start with a catchy story title on a separate line, then write the story.`;
+
+  let fullContent = "";
+  let storyTitle = "";
+  let titleResolved = false;
+  let titleBuffer = "";
 
   try {
     const stream = await openai.chat.completions.create({
       model: "llama-3.3-70b-versatile",
-      max_tokens: 1024,
-      messages: chatMessages,
+      max_tokens: 2048,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
       stream: true,
     });
 
     for await (const chunk of stream) {
-      const delta = chunk.choices[0]?.delta?.content;
-      if (delta) {
-        fullResponse += delta;
-        res.write(`data: ${JSON.stringify({ content: delta })}\n\n`);
+      const content = chunk.choices[0]?.delta?.content;
+      if (!content) continue;
+
+      if (!titleResolved) {
+        titleBuffer += content;
+        const newlineIdx = titleBuffer.indexOf("\n");
+        if (newlineIdx === -1) {
+          continue;
+        }
+
+        storyTitle = titleBuffer
+          .slice(0, newlineIdx)
+          .trim()
+          .replace(/^#+\s*/, "");
+        const rest = titleBuffer.slice(newlineIdx + 1);
+        titleResolved = true;
+
+        res.write(`data: ${JSON.stringify({ title: storyTitle })}\n\n`);
+
+        if (rest) {
+          fullContent += rest;
+          res.write(`data: ${JSON.stringify({ content: rest })}\n\n`);
+        }
+        continue;
       }
+
+      fullContent += content;
+      res.write(`data: ${JSON.stringify({ content })}\n\n`);
     }
 
-    await db.insert(tutorMessagesTable).values({
-      conversationId: id,
-      role: "assistant",
-      content: fullResponse,
+    if (!titleResolved) {
+      storyTitle = titleBuffer.trim() || `${subject}: ${topic}`;
+      fullContent = "";
+      res.write(`data: ${JSON.stringify({ title: storyTitle })}\n\n`);
+    }
+
+    await db.insert(curriculumTransformationsTable).values({
+      subject,
+      topic,
+      gradeLevel,
+      storyTitle,
+      storyContent: fullContent.trim(),
     } as any);
 
     res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
     res.end();
   } catch (err) {
-    (req as any).log?.error({ err }, "Tutor message error");
-    const errorMsg = "عذراً، حدث خطأ. يرجى المحاولة مرة أخرى.";
-    res.write(`data: ${JSON.stringify({ content: errorMsg })}\n\n`);
-    res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
+    (req as any).log?.error({ err }, "Curriculum transform error");
+    res.write(
+      `data: ${JSON.stringify({ error: "Failed to generate story" })}\n\n`,
+    );
     res.end();
   }
+});
+
+router.get("/curriculum/history", async (_req: Request, res: Response): Promise<void> => {
+  const history = await db
+    .select()
+    .from(curriculumTransformationsTable)
+    .orderBy(desc(curriculumTransformationsTable.createdAt));
+
+  res.json(ListCurriculumHistoryResponse.parse(history));
 });
 
 export default router;
