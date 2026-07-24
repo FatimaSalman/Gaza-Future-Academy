@@ -25,6 +25,8 @@ const CATEGORY_TRANSLATIONS: Record<string, { ar: string; en: string; emoji: str
   music:       { ar: 'موسيقى',    en: 'Music',       emoji: '🎵' },
   health:      { ar: 'صحة',       en: 'Health',      emoji: '❤️' },
   environment: { ar: 'بيئة',      en: 'Environment', emoji: '🌍' },
+  language:    { ar: 'لغات',      en: 'Language',    emoji: '🗣️' },
+  art:         { ar: 'فنون',      en: 'Art',         emoji: '🎨' },
 };
 
 function getCategoryEmoji(category: string): string {
@@ -60,18 +62,18 @@ export function Home() {
         <div className="absolute bottom-10 right-10 text-accent opacity-20 -rotate-12">
           <Heart className="w-32 h-32" />
         </div>
-        
+
         <div className="max-w-3xl mx-auto relative z-10 flex flex-col items-center gap-6">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white font-bold text-primary shadow-sm border-2 border-primary/10">
             <Sparkles className="w-5 h-5" />
             <span>{t('مرحباً بك في عالمنا السحري', 'Welcome to our magical world')}</span>
           </div>
-          
+
           <h1 className="text-5xl md:text-7xl font-black text-foreground leading-[1.2]">
             {t('تعلم، العب،', 'Learn, Play,')} <br/>
             <span className="text-primary">{t('وابتكر مستقبلك!', 'and Build Your Future!')}</span>
           </h1>
-          
+
           <p className="text-xl md:text-2xl text-muted-foreground font-medium max-w-2xl">
             {t(
               'أكاديمية غزة للمستقبل هي مكانك الآمن لاستكشاف القصص الممتعة، وتعلم البرمجة، وتحويل دروسك إلى مغامرات شيقة.',
@@ -147,7 +149,7 @@ export function Home() {
                   <div className="w-full aspect-video rounded-3xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center text-7xl shadow-inner group-hover:scale-105 transition-transform">
                     {story.coverEmoji}
                   </div>
-                  <div className="flex-1 flex flex-col gap-2">
+                  <div className={cn("flex-1 flex flex-col gap-2", isRtl && "text-right")}>
                     <div className="flex items-center gap-2">
                       <span className="px-3 py-1 bg-secondary/20 text-secondary-foreground rounded-full text-sm font-bold flex items-center gap-1">
                         <span>{getCategoryEmoji(story.category)}</span>

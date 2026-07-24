@@ -162,11 +162,11 @@ export function Library() {
         )}>
           {/* تصنيفات القصص */}
           <div className="space-y-3">
-            <h3 className="text-lg font-black text-foreground flex items-center gap-2">
+            <h3 className={cn("text-lg font-black text-foreground flex items-center gap-2", isRtl && "text-right")}>
               {t('التصنيف', 'Category')}
               <span className="text-sm font-bold text-muted-foreground">— {t('اختر تصنيفاً', 'Choose a category')}</span>
             </h3>
-            <div className="flex flex-wrap gap-2">
+            <div className={cn("flex flex-wrap gap-2", isRtl && "flex-row-reverse")}>
               {availableCategories.map(cat => {
                 const isActive = activeCategory === cat;
                 const translated = translateCategory(cat, language);
@@ -193,11 +193,11 @@ export function Library() {
           {/* الفئة العمرية */}
           {availableAgeGroups.length > 0 && (
             <div className="space-y-3">
-              <h3 className="text-lg font-black text-foreground flex items-center gap-2">
+              <h3 className={cn("text-lg font-black text-foreground flex items-center gap-2", isRtl && "text-right")}>
                 {t('الفئة العمرية', 'Age Group')}
                 <span className="text-sm font-bold text-muted-foreground">— {t('اختر الفئة العمرية', 'Choose age group')}</span>
               </h3>
-              <div className="flex flex-wrap gap-2">
+              <div className={cn("flex flex-wrap gap-2", isRtl && "flex-row-reverse")}>
                 {availableAgeGroups.map(age => {
                   const isActive = activeAgeGroup === age;
                   return (
@@ -225,7 +225,7 @@ export function Library() {
       {/* بطاقات النتائج مع الفلاتر المفعّلة                   */}
       {/* ═══════════════════════════════════════════════════════ */}
       {hasActiveFilters && !showFilters && (
-        <div className="flex flex-wrap items-center gap-2">
+        <div className={cn("flex flex-wrap items-center gap-2", isRtl && "flex-row-reverse")}>
           {activeCategory && (
             <span className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary rounded-full text-sm font-bold">
               {getCategoryEmoji(activeCategory)} {translateCategory(activeCategory, language)}
@@ -286,7 +286,7 @@ export function Library() {
                     <div className="w-full aspect-square rounded-3xl bg-gradient-to-br from-orange-100 to-red-100 flex items-center justify-center text-7xl shadow-inner group-hover:scale-105 transition-transform">
                       {story.coverEmoji}
                     </div>
-                    <div className="flex-1 flex flex-col gap-2">
+                    <div className={cn("flex-1 flex flex-col gap-2", isRtl && "text-right")}>
                       <div className="flex items-center justify-between">
                         <span className="px-3 py-1 bg-accent/10 text-accent rounded-full text-xs font-bold flex items-center gap-1">
                           <span>{getCategoryEmoji(story.category)}</span>
@@ -346,7 +346,7 @@ export function Library() {
                       <PlayCircle className="w-12 h-12 text-white" />
                     </div>
                   </div>
-                  <div className="flex-1 flex flex-col gap-2">
+                  <div className={cn("flex-1 flex flex-col gap-2", isRtl && "text-right")}>
                     <span className="px-3 py-1 bg-secondary/20 text-secondary-foreground rounded-full text-xs font-bold w-fit flex items-center gap-1">
                       <span>{getCategoryEmoji(podcast.category)}</span>
                       {translateCategory(podcast.category, language)}
