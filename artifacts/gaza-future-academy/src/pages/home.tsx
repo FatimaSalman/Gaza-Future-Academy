@@ -4,8 +4,49 @@ import { ArrowRight, BookOpen, Sparkles, MessageCircleCode, Heart } from 'lucide
 import { Button } from '@/components/ui/button';
 import { useListFeaturedStories, useGetLibraryStats } from '@workspace/api-client-react';
 
+// ═══════════════════════════════════════════════════════════════
+// خريطة ترجمة التصنيفات من الإنجليزية إلى العربية
+// ═══════════════════════════════════════════════════════════════
+const CATEGORY_TRANSLATIONS: Record<string, { ar: string; en: string; emoji: string }> = {
+  nature:      { ar: 'طبيعة',     en: 'Nature',      emoji: '🌿' },
+  science:     { ar: 'علوم',      en: 'Science',     emoji: '🔬' },
+  history:     { ar: 'تاريخ',     en: 'History',     emoji: '📜' },
+  adventure:   { ar: 'مغامرة',    en: 'Adventure',   emoji: '⚔️' },
+  fantasy:     { ar: 'خيال',      en: 'Fantasy',     emoji: '🦄' },
+  culture:     { ar: 'ثقافة',     en: 'Culture',     emoji: '🎨' },
+  technology:  { ar: 'تكنولوجيا', en: 'Technology',  emoji: '💻' },
+  space:       { ar: 'فضاء',      en: 'Space',       emoji: '🚀' },
+  animals:     { ar: 'حيوانات',    en: 'Animals',     emoji: '🐾' },
+  sports:      { ar: 'رياضة',     en: 'Sports',      emoji: '⚽' },
+  stories:     { ar: 'حكايات',    en: 'Stories',     emoji: '📖' },
+  education:   { ar: 'تعليم',     en: 'Education',   emoji: '📚' },
+  coding:      { ar: 'برمجة',     en: 'Coding',      emoji: '🧩' },
+  math:        { ar: 'رياضيات',   en: 'Math',        emoji: '🔢' },
+  music:       { ar: 'موسيقى',    en: 'Music',       emoji: '🎵' },
+  health:      { ar: 'صحة',       en: 'Health',      emoji: '❤️' },
+  environment: { ar: 'بيئة',      en: 'Environment', emoji: '🌍' },
+};
+
+function getCategoryEmoji(category: string): string {
+  return CATEGORY_TRANSLATIONS[category?.toLowerCase()]?.emoji ?? '📁';
+}
+
+function translateCategory(category: string, language: string): string {
+  const translated = CATEGORY_TRANSLATIONS[category?.toLowerCase()];
+  if (!translated) return category;
+  return language === 'ar' ? translated.ar : translated.en;
+}
+
+function translateAgeGroup(ageGroup: string, language: string): string {
+  if (!ageGroup) return '';
+  if (language === 'ar') {
+    return `${ageGroup} سنة`;
+  }
+  return `${ageGroup} years`;
+}
+
 export function Home() {
-  const { t, isRtl } = useLanguage();
+  const { t, isRtl, language } = useLanguage();
   const { data: featuredStories, isLoading: loadingStories } = useListFeaturedStories();
   const { data: stats } = useGetLibraryStats();
 
@@ -108,11 +149,12 @@ export function Home() {
                   </div>
                   <div className="flex-1 flex flex-col gap-2">
                     <div className="flex items-center gap-2">
-                      <span className="px-3 py-1 bg-secondary/20 text-secondary-foreground rounded-full text-sm font-bold">
-                        {story.ageGroup}
+                      <span className="px-3 py-1 bg-secondary/20 text-secondary-foreground rounded-full text-sm font-bold flex items-center gap-1">
+                        <span>{getCategoryEmoji(story.category)}</span>
+                        {translateCategory(story.category, language)}
                       </span>
                       <span className="px-3 py-1 bg-muted rounded-full text-sm font-bold text-muted-foreground flex items-center gap-1">
-                        ⏱ {story.readingTimeMinutes} {t('د', 'm')}
+                        👶 {translateAgeGroup(story.ageGroup, language)}
                       </span>
                     </div>
                     <h3 className="text-xl font-black text-foreground line-clamp-2">
