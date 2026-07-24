@@ -123,13 +123,13 @@ export function Home() {
 
       {/* Featured Stories */}
       <section className="flex flex-col gap-6">
-        <div className="flex items-center justify-between">
-          <h2 className="text-3xl font-black text-foreground flex items-center gap-3">
+        <div className={cn("flex items-center justify-between", isRtl && "flex-row-reverse")}>
+          <h2 className={cn("text-3xl font-black text-foreground flex items-center gap-3", isRtl && "flex-row-reverse")}>
             <span className="w-10 h-10 rounded-xl bg-secondary flex items-center justify-center text-xl shadow-sm">⭐</span>
             {t('قصص مختارة لك', 'Featured Stories for You')}
           </h2>
           <Link href="/library">
-            <Button variant="ghost" className="font-bold rounded-full">
+            <Button variant="ghost" className={cn("font-bold rounded-full", isRtl && "flex-row-reverse")}>
               {t('عرض الكل', 'View All')}
               <ArrowRight className={isRtl ? "mr-2 w-5 h-5 rotate-180" : "ml-2 w-5 h-5"} />
             </Button>

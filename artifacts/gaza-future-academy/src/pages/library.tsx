@@ -31,6 +31,7 @@ const CATEGORY_TRANSLATIONS: Record<string, { ar: string; en: string; emoji: str
   art:         { ar: 'فنون',      en: 'Art',         emoji: '🎨' },
 };
 
+
 // دالة ترجمة التصنيف
 function translateCategory(category: string, language: string): string {
   const translated = CATEGORY_TRANSLATIONS[category?.toLowerCase()];
@@ -109,8 +110,8 @@ export function Library() {
 
   return (
     <div className="flex flex-col gap-8">
-      <div className="flex flex-col gap-2">
-        <h1 className="text-4xl font-black flex items-center gap-3">
+      <div className={cn("flex flex-col gap-2", isRtl && "text-right")}>
+        <h1 className={cn("text-4xl font-black flex items-center gap-3", isRtl && "flex-row-reverse")}>
           <div className="w-12 h-12 bg-accent rounded-2xl flex items-center justify-center text-white shadow-sm">
             <BookOpen className="w-7 h-7" />
           </div>
@@ -124,11 +125,12 @@ export function Library() {
       {/* ═══════════════════════════════════════════════════════ */}
       {/* زر الفلاتر + مؤشر الفلاتر النشطة                   */}
       {/* ═══════════════════════════════════════════════════════ */}
-      <div className="flex items-center justify-between">
+      <div className={cn("flex items-center justify-between", isRtl && "flex-row-reverse")}>
         <button
           onClick={() => setShowFilters(!showFilters)}
           className={cn(
             "flex items-center gap-2 px-5 py-3 rounded-full font-bold text-sm transition-all border-2",
+            isRtl && "flex-row-reverse",
             showFilters || hasActiveFilters
               ? "bg-primary text-primary-foreground border-primary shadow-md"
               : "bg-card text-foreground border-border/50 hover:border-primary/30"
@@ -146,7 +148,7 @@ export function Library() {
         {hasActiveFilters && (
           <button
             onClick={clearFilters}
-            className="flex items-center gap-1 text-sm text-muted-foreground hover:text-destructive font-bold transition-colors"
+            className={cn("flex items-center gap-1 text-sm text-muted-foreground hover:text-destructive font-bold transition-colors", isRtl && "flex-row-reverse")}
           >
             <X className="w-4 h-4" />
             {t('مسح الفلاتر', 'Clear filters')}
@@ -247,33 +249,35 @@ export function Library() {
         </div>
       )}
 
-      <Tabs defaultValue="stories" className="w-full">
+      <Tabs defaultValue="stories" className={cn("w-full", isRtl && "[&_*]:text-right")}>
+        <div className={cn("flex", isRtl && "justify-end")}>
         <TabsList className="bg-card border-2 border-border/50 h-16 p-2 rounded-full mb-8 inline-flex" style={{ direction: isRtl ? 'rtl' : 'ltr' }}>
           <TabsTrigger 
             value="stories" 
-            className="rounded-full px-8 font-black text-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all"
+            className={cn("rounded-full px-8 font-black text-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all flex items-center gap-2", isRtl && "flex-row-reverse")}
           >
-            <BookOpen className={cn("w-5 h-5", isRtl ? "ml-2" : "mr-2")} />
+            <BookOpen className="w-5 h-5" />
             {t('القصص', 'Stories')}
             {hasActiveFilters && filteredStories && (
-              <span className="mr-2 text-xs bg-primary-foreground/20 px-2 py-0.5 rounded-full">
+              <span className="text-xs bg-primary-foreground/20 px-2 py-0.5 rounded-full">
                 {filteredStories.length}
               </span>
             )}
           </TabsTrigger>
           <TabsTrigger 
             value="podcasts" 
-            className="rounded-full px-8 font-black text-lg data-[state=active]:bg-secondary data-[state=active]:text-secondary-foreground transition-all"
+            className={cn("rounded-full px-8 font-black text-lg data-[state=active]:bg-secondary data-[state=active]:text-secondary-foreground transition-all flex items-center gap-2", isRtl && "flex-row-reverse")}
           >
-            <Headphones className={cn("w-5 h-5", isRtl ? "ml-2" : "mr-2")} />
+            <Headphones className="w-5 h-5" />
             {t('البودكاست', 'Podcasts')}
             {hasActiveFilters && filteredPodcasts && (
-              <span className="mr-2 text-xs bg-secondary-foreground/20 px-2 py-0.5 rounded-full">
+              <span className="text-xs bg-secondary-foreground/20 px-2 py-0.5 rounded-full">
                 {filteredPodcasts.length}
               </span>
             )}
           </TabsTrigger>
         </TabsList>
+        </div>
 
         <TabsContent value="stories" className="mt-0 outline-none">
           {loadingStories ? (
